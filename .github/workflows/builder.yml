@@ -1,0 +1,32 @@
+name: create_custom_windows_image
+
+on: push
+
+jobs:
+  BUILD-CUSTOM-IMAGE:
+    runs-on: ubuntu-latest    
+    steps:
+    - name: CHECKOUT
+      uses: actions/checkout@v2
+  
+
+    - name: AZURE LOGIN 
+      uses: azure/login@v1
+      with:
+        creds: ${{secrets.AZURE_CREDENTIALS}}
+
+    - name: BUILD WEBAPP
+      run: sudo ${{ GITHUB.WORKSPACE }}/webApp/buildscript.sh # Runs necessary build scripts and copies built artifacts to  ${{ GITHUB.WORKSPACE }}/workflow-artifacts
+      
+
+    - name: BUILD-CUSTOM-VM-IMAGE      
+      uses: azure/build-vm-image@v0
+      with:        
+        resource-group-name: 'myResourceGroup'
+        managed-identity: 'myImageBuilderIdentity'
+        location: 'eastus2'
+        source-os-type: 'windows'        
+        source-image: MicrosoftWindowsServer:WindowsServer:2019-Datacenter:latest        
+        customizer-script: |
+          & 'c:\workflow-artifacts\webApp\webconfig.ps1'
+
